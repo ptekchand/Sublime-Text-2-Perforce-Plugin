@@ -18,6 +18,7 @@
 # Eric Martel - first implementation of submit
 # Eric Martel - Better handling of P4CONFIG files
 # Andrew Butt & Eric Martel - threading of the diff task and selector for the graphical diff application
+# Matt York - p4v commands to load history, time lapse view, and revision graph
 
 import sublime
 import sublime_plugin
@@ -56,6 +57,18 @@ def ConstructCommand(in_command):
     # command = getPerforceConfigFromPreferences(command)
     command += in_command
     return command
+
+def GetPerforceInfo():
+    command = ConstructCommand('p4 info')
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=global_folder, shell=True)
+    result, err = p.communicate()
+
+    if(err):
+        WarnUser("usererr " + err.strip())
+        return err
+    
+    settings = dict([entry.split(': ',1) for entry in result.splitlines()])
+    return settings    
 
 def getPerforceConfigFromPreferences(command):
     perforce_settings = sublime.load_settings('Perforce.sublime-settings')
@@ -1025,3 +1038,37 @@ class ShelveClCommand(threading.Thread):
                 resultchangelists.insert(0, "Changelist " + changelistlinesplit[1] + " - " + ' '.join(changelistlinesplit[7:])) 
 
         return resultchangelists
+
+class PerforceVisualCommandThread(threading.Thread):
+    def __init__(self, command, filename):
+        self.command = command
+        self.filename = filename
+        threading.Thread.__init__(self)
+        
+    def run(self):
+        p = GetPerforceInfo()
+        command = ConstructCommand('p4v -p %s -u %s -c %s -cmd "%s %s"' %
+                                   (p['Server license-ip'], p['User name'], p['Client name'], 
+                                    self.command, self.filename))
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=global_folder, shell=True)
+        result, err = p.communicate()
+            
+def PerforceVisualCommandOnFile(command, full_path):
+    if(full_path):
+        folder_name, filename = os.path.split(full_path)
+        if(IsFileInDepot(folder_name, filename)):
+            PerforceVisualCommandThread(command, full_path).start()
+            LogResults(1, "Launching thread for Visual Command")
+        else:
+            LogResults(0, "File is not under the client root.")
+    else:
+        WarnUser("View does not contain a file")
+
+class PerforceVisualCommand(sublime_plugin.TextCommand):
+    def run(self, edit, cmd):
+        if(cmd):
+            PerforceVisualCommandOnFile(cmd, self.view.file_name())
+        else:
+            sublime.error_message("no cmd type given for p4v")
+        
+        

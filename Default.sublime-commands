@@ -28,6 +28,21 @@
         "command": "perforce_diff"
     },
     {
+        "caption": "Perforce: History",
+        "command": "perforce_visual",
+        "args": {"cmd": "history"}
+    },
+    {
+        "caption": "Perforce: Time Lapse",
+        "command": "perforce_visual",
+        "args": {"cmd": "annotate"}
+    },
+    {
+        "caption": "Perforce: Revision Graph",
+        "command": "perforce_visual",
+        "args": {"cmd": "tree"}
+    },
+    {
         "caption": "Perforce: Graphical Diff with Depot",
         "command": "perforce_graphical_diff_with_depot"
     },
