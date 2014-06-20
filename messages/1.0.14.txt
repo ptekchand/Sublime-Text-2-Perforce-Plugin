@@ -2,3 +2,8 @@ Perforce integration 1.0.14 Changelog:
 
 Change
 - Added the possibility to submit the Default changelist
+
+Add
+- Added function to extract all info in `p4 info` into a dictionary
+- Added a command to launch any p4v window. Window specified in args. Launches in separate thread.
+- Added context, main, and command menu items for p4v History, Time Lapse, and Revision Graph windows

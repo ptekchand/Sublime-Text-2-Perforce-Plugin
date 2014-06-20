@@ -89,6 +89,21 @@
                         ]
                     },
                     {
+                        "command": "perforce_visual",
+                        "args": {"cmd": "history"},
+                        "caption": "History"
+                    },
+                    {
+                        "command": "perforce_visual",
+                        "args": {"cmd": "annotate"},
+                        "caption": "Time Lapse"
+                    },
+                    {
+                        "command": "perforce_visual",
+                        "args": {"cmd": "tree"},
+                        "caption": "Revision Graph"
+                    },  
+                    {
                         "command": "perforce_list_checked_out_files",
                         "caption": "List Checked Out Files"
                     },
