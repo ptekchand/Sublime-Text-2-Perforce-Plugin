@@ -1110,12 +1110,19 @@ class PerforceVisualCommandThread(threading.Thread):
         
     def run(self):
         p = GetPerforceInfo()
+        p4_port = 1667
+        if 'P4PORT' in os.environ:
+            p4_port = os.environ['P4PORT']
+        elif 'Broker address' in p:
+            p4_port = p['Broker address']
+        elif 'Server license-ip' in p:
+            p4_port = p['Server license-ip']
         command = ConstructCommand('p4v -p %s -u %s -c %s -cmd "%s %s"' %
-                                   (p['Server license-ip'], p['User name'], p['Client name'], 
+                                   (p4_port, p['User name'], p['Client name'], 
                                     self.command, self.filename))
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=global_folder, shell=True)
         result, err = p.communicate()
-            
+
 def PerforceVisualCommandOnFile(command, full_path):
     if(full_path):
         folder_name, filename = os.path.split(full_path)
