@@ -78,7 +78,7 @@ def GetPerforceInfo():
         return err
     
     settings = dict([entry.split(': ',1) for entry in result.splitlines()])
-    return settings    
+    return settings
 
 def getPerforceConfigFromPreferences(command):
     perforce_settings = sublime.load_settings('Perforce.sublime-settings')
@@ -98,6 +98,30 @@ def getPerforceConfigFromPreferences(command):
     command = addP4Var(command, "P4USER")
     command = addP4Var(command, "P4PASSWD")
     return command
+
+def GetP4PortFromSet():
+    command = ConstructCommand('p4 set')
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=global_folder, shell=True)
+    result, err = p.communicate()
+
+    if(err):
+        WarnUser("porterr " + err.strip())
+        return -1
+
+    # locate the line containing "P4PORT=" and extract the following host:port
+    startindex = result.find("P4PORT=")
+    if(startindex == -1):
+        WarnUser("Unexpected output from 'p4 set'.")
+        return -1
+    
+    startindex += 7 # advance after 'P4PORT='
+
+    endindex = result.find("\n", startindex) 
+    if(endindex == -1):
+        WarnUser("Unexpected output from 'p4 set'.")
+        return -1
+
+    return result[startindex:endindex].strip();
 
 def GetUserFromClientspec():
     command = ConstructCommand('p4 info')
@@ -1110,15 +1134,21 @@ class PerforceVisualCommandThread(threading.Thread):
         
     def run(self):
         p = GetPerforceInfo()
-        p4_port = 1667
+        p4_port = -1
         if 'P4PORT' in os.environ:
             p4_port = os.environ['P4PORT']
         elif 'Broker address' in p:
             p4_port = p['Broker address']
         elif 'Server license-ip' in p:
             p4_port = p['Server license-ip']
-        command = ConstructCommand('p4v -p %s -u %s -c %s -cmd "%s %s"' %
-                                   (p4_port, p['User name'], p['Client name'], 
+        else:
+            p4_port = GetP4PortFromSet()
+        p4_port_param = ''
+        if(p4_port != -1 and p4_port):
+            p4_port_param = '-p %s ' % (p4_port)
+
+        command = ConstructCommand('p4v %s-u %s -c %s -cmd "%s %s"' %
+                                   (p4_port_param, p['User name'], p['Client name'], 
                                     self.command, self.filename))
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=global_folder, shell=True)
         result, err = p.communicate()
